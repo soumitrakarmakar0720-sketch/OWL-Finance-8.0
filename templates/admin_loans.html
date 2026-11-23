@@ -1,0 +1,13 @@
+{% extends 'base.html' %}{% block content %}
+<div class="eyebrow">ADMIN / LOAN MANAGEMENT</div><h1>Loans</h1><p class="muted">Select a category to see loans. Open a loan to manage payments or foreclosure.</p>
+<div class="option-grid">
+{% for v,label,desc in [('active','Active loans','Currently running'),('offered','Offers','Awaiting acceptance'),('accepted','Accepted','Awaiting disbursement'),('closed','Closed','Fully repaid'),('foreclosed','Foreclosed','Early settlement'),('cancelled','Cancelled / deleted','Archived records'),('all','All loans','Complete history')] %}
+<a class="option-card {% if status==v %}selected{% endif %}" href="{{url_for('admin_loans',status=v)}}"><span class="option-dot"></span><strong>{{label}}</strong><small>{{desc}}</small></a>
+{% endfor %}</div>
+<div class="section-head"><h2>{{status|replace('_',' ')|title}} loans <span class="count">{{loans|length}}</span></h2>{% if me.role=='admin' %}<a class="btn primary" href="{{url_for('admin_new_loan')}}">+ Create loan</a>{% endif %}</div>
+{% for l in loans %}
+<div class="loan-row"><a class="loan-main" href="{{url_for('loan_detail',lid=l.id)}}"><span class="loan-icon">₹</span><span><strong>Loan #{{l.id}} · {{l.application.user.name}}</strong><small>₹{{'%.2f'|format(l.principal)}} · {{l.rate}}% {{l.annual_or_monthly}}</small></span></a><div class="loan-actions"><span class="pill">{{l.status|replace('demo_','')|replace('_',' ')|title}}</span><a class="btn ghost" href="{{url_for('loan_detail',lid=l.id)}}">View</a>
+{% if me.role=='admin' and l.status in ('offered','accepted','cancelled') %}<details class="danger-menu"><summary class="btn danger-outline">Delete / archive</summary><div class="danger-content"><p><strong>Archive this loan?</strong> This removes it from active lists but retains the record and audit history. It does not permanently erase financial data.</p><form method="post" action="{{url_for('archive_loan',lid=l.id)}}" onsubmit="return confirm('Archive loan #{{l.id}}? This will retain the record for audit.')"><input type="hidden" name="csrf" value="{{csrf}}"><label>Reason <input name="reason" minlength="8" maxlength="500" required placeholder="Enter reason (8+ characters)"></label><button class="btn danger">Confirm archive</button></form></div></details>{% elif me.role=='admin' %}<span class="muted tiny" title="Financial or foreclosure records cannot be erased">Deletion locked</span>{% endif %}
+</div></div>
+{% else %}<div class="empty-state">No loans in this category. <a href="{{url_for('admin_loans',status='all')}}">View all loans</a></div>{% endfor %}
+{% endblock %}
